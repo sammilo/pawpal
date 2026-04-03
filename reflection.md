@@ -6,6 +6,7 @@
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
+    The main objects are the owner and pet(s). The owner needs to store information such as preferences and availability (getters and setters), while the pet needs to store information regarding food, meds, and grooming. We also need a task class to store tasks and priority, and a method to return tasks ordered by priority. Lastly, we need a schedule class which contains the list of tasks and has a method to create a schedule based on this list as well as owner preferences and availability. 
 
 **b. Design changes**
 
