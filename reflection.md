@@ -6,12 +6,24 @@
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
-    The main objects are the owner and pet(s). The owner needs to store information such as preferences and availability (getters and setters), while the pet needs to store information regarding food, meds, and grooming. We also need a task class to store tasks and priority, and a method to return tasks ordered by priority. Lastly, we need a schedule class which contains the list of tasks and has a method to create a schedule based on this list as well as owner preferences and availability. 
-
+    There are four main classes: owner, pet, task, and scheduler. 
+    Owner has attributes such as name, preferences, avilability, and pet(s), along with the correpsonding getter and setter methods.
+    Pet has attributes such as name, feeding, medicine(s), grooming, and enrichment, along with the corresponding getter and setter methods. It also contains a list of tasks, and methods to add and remove tasks. 
+    Task has attributes such as assigned pet, description/name, duration, priority, and due time. It also has a boolean value to keep track of task completion, and a method to mark tasks as complete.
+    Scheduler has a reference to owner and a pet as a parameter (since it needs access to both classes to create a recommended task list). It also includes method to order tasks by priority and by due time. Lastly, it's most important method, recommend daily tasks, prints the recommended daily task list based on task priority, due time, duration, and owner availability and preferences.
+    
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+    Yes, in fact, I ended up redoing the entire UML diagram. Originally, the AI pointed out that the Scheduler class was missing a reference to the Owner class, meaning it couldn't access the owner's availability and preferences. After fixing this error, I realized I didn't understand the relationship between the classes enough, so I made the entire UML diagram by hand. 
+
+    By making the UML diagram by hand, I realized I was missing several attributes (owner name, task duration, pet species, etc.). I then asked the AI to review my updated UML and add/remove methods or attributes with reasoning provided. I reviewed the edits it made, which all made sense. The add/remove task methods were moved from the Task class to the Pet class, since it's the pets that have tasks, not the tasks themselves. Some attributes were also changed from list to dictionary since they contained key-value pairs rather than just a list of information.
+
+    Then, I had the AI review the UML again, and it pointed out that having priority and due_time be a plain string made it harder to stort, so I created a system to assign them all integer values.
+
+    Lastly, as the AI suggested, I edited the recommend_daily_tasks function to account for multiple pet functionality (so that the owner is not double-booked.)
+    
 
 ---
 

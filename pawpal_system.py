@@ -1,92 +1,163 @@
-from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import List, Dict
-
-
-@dataclass
-class Pet:
-    name: str
-    food_requirements: str
-    meds: List[str] = field(default_factory=list)
-    grooming_needs: str = ""
-    enrichment_done: bool = False
-
-    def get_food_requirements(self) -> str:
-        return self.food_requirements
-
-    def get_meds(self) -> List[str]:
-        return list(self.meds)
-
-    def get_grooming_needs(self) -> str:
-        return self.grooming_needs
-
-    def has_enrichment(self) -> bool:
-        return self.enrichment_done
-
-    def set_enrichment_done(self, done: bool) -> None:
-        self.enrichment_done = done
-
-
-@dataclass
-class Task:
-    description: str
-    priority: int
-    time_required: int
-    pet: Pet
-
-    def get_priority(self) -> int:
-        return self.priority
-
-    def set_priority(self, p: int) -> None:
-        self.priority = p
-
-    def get_time_required(self) -> int:
-        return self.time_required
-
-    def set_time_required(self, minutes: int) -> None:
-        self.time_required = minutes
-
-
 class Owner:
-    def __init__(self, name: str, preferences: Dict[str, str] = None, availability: List[str] = None):
-        self.name = name
-        self.preferences = preferences or {}
-        self.availability = availability or []
-        self.pets: List[Pet] = []
+    def __init__(self, name, availability=None, preferences=None):
+        self._name = name
+        self._availability = availability or []  # list of time slots using 24-hour ints (e.g. [8, 12, 18] for 8 AM, 12 PM, 6 PM)
+        self._preferences = preferences or {}    # e.g. {"preferred_time": "10-12", "task_types": ["feeding", "grooming"]}
+        self._pets = []
 
-    def get_preferences(self) -> Dict[str, str]:
-        return dict(self.preferences)
+    def get_name(self):
+        pass
 
-    def set_preferences(self, prefs: Dict[str, str]) -> None:
-        self.preferences = dict(prefs)
+    def set_name(self, name):
+        pass
 
-    def get_availability(self) -> List[str]:
-        return list(self.availability)
+    def get_availability(self):
+        pass
 
-    def set_availability(self, avail: List[str]) -> None:
-        self.availability = list(avail)
+    def set_availability(self, availability):
+        pass
 
-    def add_pet(self, pet: Pet) -> None:
-        if pet not in self.pets:
-            self.pets.append(pet)
+    def get_preferences(self):
+        pass
 
-    def remove_pet(self, pet: Pet) -> None:
-        if pet in self.pets:
-            self.pets.remove(pet)
+    def set_preferences(self, preferences):
+        pass
+
+    def add_pet(self, pet):
+        # Also sets pet._owner = self to maintain back-reference
+        pass
+
+    def remove_pet(self, pet):
+        # Also clears pet._owner = None on removal
+        pass
+
+
+class Pet:
+    def __init__(self, name, species):
+        self._name = name
+        self._species = species   # "dog", "cat", "other"
+        self._owner = None        # back-reference to the Owner; set via Owner.add_pet()
+        self._feedings = []       # list of feeding times (24-hour ints, e.g. [8, 18] for 8 AM and 6 PM)
+        self._medicines = {}      # dictionary of medication schedules (e.g. {"antibiotic": "8, 20", "vitamins": "12"})
+        self._grooming_needs = {} # e.g. {"brush": True, "bath": False, "nail_trim": True}
+        self._enrichment_needs = {} # e.g. {"walk": True, "play": False}
+        self._tasks = []          # list of Task objects
+
+    def get_name(self):
+        pass
+
+    def set_name(self, name):
+        pass
+
+    def get_feedings(self):
+        pass
+
+    def set_feedings(self, feedings):
+        pass
+
+    def get_medicines(self):
+        pass
+
+    def set_medicines(self, medicines):
+        pass
+
+    def get_grooming(self):
+        pass
+
+    def set_grooming(self, grooming):
+        pass
+
+    def get_enrichment(self):
+        pass
+
+    def set_enrichment(self, enrichment):
+        pass
+
+    def get_owner(self):
+        pass
+
+    def set_owner(self, owner):
+        pass
+
+    def get_tasks(self):
+        pass
+
+    def add_task(self, task):
+        # Appends task to self._tasks and sets task._pet = self (bidirectional sync)
+        pass
+
+    def remove_task(self, task):
+        # Removes task from self._tasks and sets task._pet = None (bidirectional sync)
+        pass
+
+
+class Task:
+    def __init__(self, pet, description, priority, due_time, duration):
+        self._pet = pet             # Pet object this task is assigned to
+        self._description = description
+        self._priority = priority   # "high = 1", "medium = 2", "low = 3"
+        self._due_time = due_time   # 24-hour int (e.g. 14 for 2 PM)
+        self._duration = duration   # duration in minutes (int)
+        self._is_complete = False
+
+    def mark_complete(self):
+        pass
+
+    def get_pet(self):
+        pass
+
+    def set_pet(self, pet):
+        # Removes self from old pet's _tasks, sets self._pet = pet,
+        # then adds self to new pet's _tasks (bidirectional sync)
+        pass
+
+    def get_description(self):
+        pass
+
+    def set_description(self, desc):
+        pass
+
+    def get_priority(self):
+        pass
+
+    def set_priority(self, priority):
+        pass
+
+    def get_due_time(self):
+        pass
+
+    def set_due_time(self, due_time):
+        pass
+
+    def get_duration(self):
+        pass
+
+    def set_duration(self, duration):
+        pass
+
+    def get_is_complete(self):
+        pass
 
 
 class Scheduler:
-    def __init__(self, owner: Owner):
-        self.owner = owner
-        self.tasks: List[Task] = []
+    def __init__(self, owner):
+        self._owner = owner  # Owner object — provides availability and preferences
 
-    def add_task(self, task: Task) -> None:
-        self.tasks.append(task)
+    def order_by_priority(self, tasks):
+        # Returns a new list of tasks sorted by priority (high → medium → low)
+        pass
 
-    def generate_daily_plan(self) -> List[Task]:
-        # TODO: implement scheduling logic using priority + availability + enrichment
-        return []
+    def order_by_due_date(self, tasks):
+        # Returns a new list of tasks sorted by due_time (earliest first)
+        pass
 
-    def explain_plan(self, plan: List[Task]) -> str:
-        # TODO: return a human-readable explanation of the decision process
-        return ""
+    def recommend_daily_tasks(self, pets):
+        # Accepts a list of Pet objects (all pets belonging to self._owner).
+        # Collects tasks across all pets, then filters and sorts them based on:
+        #   - task priority (1=high, 2=medium, 3=low)
+        #   - task due_time (24-hour int, earliest first)
+        #   - owner availability (self._owner.get_availability())
+        #   - owner preferences (self._owner.get_preferences())
+        # Allocates the owner's total available time across all pets before returning
+        # the combined recommended task list.
+        pass
