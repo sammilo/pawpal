@@ -4,15 +4,21 @@ from datetime import datetime, timedelta, date
 import streamlit as st
 from pawpal_system import Owner, Pet, Task, Scheduler, due_before_availability
 
-st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="wide")
+st.set_page_config(page_title="PawPal+", page_icon="🍄", layout="wide")
 
 st.markdown(
     """
     <style>
-    div[data-testid="stToast"] {
-        left: 50%;
-        transform: translateX(-50%);
+    /* ── Global background & text ─────────────────────────────────────── */
+    .stApp {
+        background-color: #1C2945;
     }
+
+    /* ── Main content area ────────────────────────────────────────────── */
+    section[data-testid="stMain"] > div {
+        background-color: #1C2945;
+    }
+
     </style>
     """,
     unsafe_allow_html=True,
@@ -156,7 +162,7 @@ if "initialized" not in st.session_state:
     st.session_state.initialized = True
 
 # ── Page header ───────────────────────────────────────────────────────────────
-st.title("🐾 PawPal+")
+st.title("🍄 PawPal+")
 st.markdown(
     """
 Welcome to **PawPal+**, your pet care planning assistant.
@@ -302,7 +308,7 @@ st.caption("Add pets or use ✏️ to edit an existing one.")
 owner_names = [o["name"] for o in st.session_state.owners]
 
 # Keep form_pet_owner valid if the owner list changed since last render
-if st.session_state.form_pet_owner not in owner_names:
+if st.session_state.get("form_pet_owner") not in owner_names:
     st.session_state.form_pet_owner = owner_names[0] if owner_names else ""
 
 # Consume pet_edit_pending: pre-populate widget keys BEFORE widgets render
@@ -452,7 +458,7 @@ st.caption("Add tasks for your pets. Each task is tied to a specific pet.")
 pet_names = [p["name"] for p in st.session_state.pets]
 
 # Keep form_task_pet valid if the pet list changed since last render
-if st.session_state.form_task_pet not in pet_names:
+if st.session_state.get("form_task_pet") not in pet_names:
     st.session_state.form_task_pet = pet_names[0] if pet_names else ""
 
 # ── Pre-populate form when an edit was just requested (edit_pending is set in

@@ -52,14 +52,18 @@
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+    I used AI mostly for debugging and refactoring my code to make it more Pythonic.
+
 - What kinds of prompts or questions were most helpful?
-    The most helpful prompts or questions were when I had a revision I was making to the code, but needed guidance finding all the pieces of code that would need to be updated as a result of said revison. For example, when I switched from a 24-hour day to a 1440-minute day to better assign tasks in the scheduler, I asked the AI to indentify all the code snippets in app.py that I would have to edit as a result of this change. I used it mostly for debugging and refactoring my code to make it more Pythonic.
+    The most helpful prompts or questions were when I had a revision I was making to the code, but needed guidance finding all the pieces of code that would need to be updated as a result of said revison. For example, when I switched from a 24-hour day to a 1440-minute day to better assign tasks in the scheduler, I asked the AI to indentify all the code snippets in app.py that I would have to edit as a result of this change. 
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+    The AI kept suggesting ways to assign tasks to the earliest available slot, but failed to implement it correctly any time I tested it on the site.
+
 - How did you evaluate or verify what the AI suggested?
-    The AI kept suggesting ways to assign tasks to the earliest available slot, but failed to implement it correctly any time I tested it on the site. I decided to write the algorithm down myself on paper and then explained to the AI how to assign tasks based on a 1440-element array where 0=unavailable, 1=available, 2=reserved. Once it made this revision, I created several taste cases both through main.py and the site. 
+     I decided to write the algorithm down myself on paper and then explained to the AI how to assign tasks based on a 1440-element array where 0=unavailable, 1=available, 2=reserved. Once it made this revision, I created several taste cases both through main.py and the site. 
 ---
 
 ## 4. Testing and Verification
@@ -67,12 +71,19 @@
 **a. What you tested**
 
 - What behaviors did you test?
+    I tested behaviours such as trying to create a schedule when there are no owners or tasks; editing owner availability or task due time and regenerating daily schedule to ensure the daily schedule is updated accordingly; and editing & deleting owners, pets, and tasks.
+
 - Why were these tests important?
+    These tests are important because they ensure the website/code behaves in a predictable function, and that the program won't crash because it encounters an error, preventing the owners from using the wbesite as intended. 
+    
 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
+    I am A 4.6/5 on the confidence scale. I wasn't able to think as many test cases as I would've liked to.
+
 - What edge cases would you test next if you had more time?
+    Overloading the scheduler by adding a bunch of tasks with short duration times all due by the same time with limited owner availability. 
 
 ---
 
@@ -81,11 +92,18 @@
 **a. What went well**
 
 - What part of this project are you most satisfied with?
+    The scheduler. It considers more factors than I estimated I would be able to implement.
 
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
+    The UI. I wasn't able to customize it more since I dedicated most of my time to the scheduling algorithm.
+
+    On that note, I would like to update the availability and due time form selection so that the user can select their own time blocks by the minute, rather than in 30-minute intervals -allowing for creater customization.
+.
 
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+
+    It's always better to come up with a concrete idea yourself, and then have the AI finalize the details. The AI makes the most errors when it's working from only an idea, if you give it a skeleton, diagram, or through plan, it executes the code with significantly less errors. 
