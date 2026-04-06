@@ -4,20 +4,18 @@ from dataclasses import dataclass, field
 @dataclass
 class Owner:
     name: str
-    availability: list = field(default_factory=list)  # list of time slots using 24-hour ints (e.g. [8, 12, 18] for 8 AM, 12 PM, 6 PM)
-    preferences: dict = field(default_factory=dict)   # e.g. {"preferred_times": [8, 10, 12], "task_types": ["feeding", "grooming"]}
+    availability: list = field(default_factory=lambda: [0] * 1440)  # 1440-min array: 0=unavailable, 1=available, 2=reserved
+    preferences: dict = field(default_factory=dict)   # e.g. {"task_types": ["feeding", "grooming"]}
     pets: list = field(default_factory=list)
 
     def add_pet(self, pet):
         """Add a pet to this owner's list and set the pet's owner back-reference."""
-        # Also sets pet.owner = self to maintain back-reference
         if pet not in self.pets:
             self.pets.append(pet)
             pet.owner = self
 
     def remove_pet(self, pet):
         """Remove a pet from this owner's list and clear the pet's owner back-reference."""
-        # Also clears pet.owner = None on removal
         if pet in self.pets:
             self.pets.remove(pet)
             pet.owner = None
@@ -27,23 +25,21 @@ class Owner:
 class Pet:
     name: str
     species: str   # "dog", "cat", "other"
-    owner: 'Owner' = None        # back-reference to the Owner; set via Owner.add_pet()
-    feedings: list = field(default_factory=list)       # list of feeding times (24-hour ints, e.g. [8, 18] for 8 AM and 6 PM)
-    medicines: dict = field(default_factory=dict)      # dictionary of medication schedules (e.g. {"antibiotic": "8, 20", "vitamins": "12"})
-    grooming_needs: dict = field(default_factory=dict) # e.g. {"brush": True, "bath": False, "nail_trim": True}
-    enrichment_needs: dict = field(default_factory=dict) # e.g. {"walk": True, "play": False}
-    tasks: list = field(default_factory=list)          # list of Task objects
+    owner: 'Owner' = None
+    feedings: list = field(default_factory=list)
+    medicines: dict = field(default_factory=dict)      # e.g. {"Apoquel": "", "Vitamin D": ""}
+    grooming_needs: dict = field(default_factory=dict) # e.g. {"completed_today": True}
+    enrichment_needs: dict = field(default_factory=dict) # e.g. {"completed_today": False}
+    tasks: list = field(default_factory=list)
 
     def add_task(self, task):
         """Add a task to this pet's list and set the task's pet back-reference."""
-        # Appends task to self.tasks and sets task.pet = self (bidirectional sync)
         if task not in self.tasks:
             self.tasks.append(task)
             task.pet = self
 
     def remove_task(self, task):
         """Remove a task from this pet's list and clear the task's pet back-reference."""
-        # Removes task from self.tasks and sets task.pet = None (bidirectional sync)
         if task in self.tasks:
             self.tasks.remove(task)
             task.pet = None
@@ -53,10 +49,14 @@ class Pet:
 class Task:
     pet: 'Pet'
     description: str
-    priority: int       # integer: 1 (high), 2 (medium), 3 (low)
-    due_time: int       # 24-hour int (e.g. 14 for 2 PM)
-    duration: int       # duration in minutes (int)
+    priority: int       # 1 (high), 2 (medium), 3 (low)
+    due_time: int       # minutes from midnight (e.g. 840 for 2:00 PM)
+    duration: int       # duration in minutes
+    category: str = ""      # one of TASK_CATEGORY_OPTIONS, e.g. "feeding", "grooming", "other"
     is_complete: bool = False
+    recurring: str = ""     # "" = not recurring; "Daily", "Weekly", or "Monthly"
+    scheduled_time: int = -1  # actual start in minutes from midnight; -1 = not yet scheduled
+    reserved_indices: list = field(default_factory=list)  # indices reserved in owner's availability array
 
     def mark_complete(self):
         """Mark this task as complete."""
@@ -64,8 +64,6 @@ class Task:
 
     def set_pet(self, pet):
         """Reassign this task to a new pet, updating both pets' task lists."""
-        # Removes self from old pet's tasks, sets self.pet = pet,
-        # then adds self to new pet's tasks (bidirectional sync)
         if self.pet is not None:
             if self in self.pet.tasks:
                 self.pet.tasks.remove(self)
@@ -74,58 +72,104 @@ class Task:
             pet.tasks.append(self)
 
 
+def due_before_availability(due_time: int, availability: list) -> bool:
+    """Return True if due_time is earlier than the owner's first available minute."""
+    if not availability:
+        return False
+    if len(availability) == 1440:
+        # New format: 1440-minute array — find first non-zero (available) minute
+        first_avail = next((i for i, v in enumerate(availability) if v != 0), None)
+        return first_avail is not None and due_time < first_avail
+    else:
+        # Legacy format: list of 30-min block start times
+        return bool(availability) and due_time < min(availability)
+
+
 class Scheduler:
     def __init__(self, owner):
         """Initialize the scheduler with an owner whose availability and preferences guide scheduling."""
-        self._owner = owner  # Owner object — provides availability and preferences
+        self._owner = owner
+
+    def high_priority_overload(self, pets):
+        """Return (high_priority_minutes, available_minutes) if the total duration of
+        incomplete high-priority tasks exceeds the owner's total availability, else None."""
+        high_min = sum(
+            task.duration
+            for pet in pets
+            for task in pet.tasks
+            if not task.is_complete and task.priority == 1
+        )
+        # Count all non-zero minutes as available (1=free, 2=already reserved but still owner time)
+        avail_min = sum(1 for v in self._owner.availability if v != 0)
+        return (high_min, avail_min) if high_min > avail_min else None
 
     def order_by_priority(self, tasks):
         """Return tasks sorted from highest to lowest priority (1=high, 2=medium, 3=low)."""
-        # Priority: 1 = high, 2 = medium, 3 = low
         return sorted(tasks, key=lambda task: task.priority)
 
     def order_by_due_date(self, tasks):
-        """Return tasks sorted by due time, earliest first (24-hour int)."""
+        """Return tasks sorted by due time, earliest first (minutes from midnight)."""
         return sorted(tasks, key=lambda task: task.due_time)
 
     def recommend_daily_tasks(self, pets):
-        """Return a prioritized task list across all pets, filtered to fit the owner's available time."""
-        # Accepts a list of Pet objects (all pets belonging to self._owner).
-        # Collects tasks across all pets, then filters and sorts them based on:
-        #   - task priority (1=high, 2=medium, 3=low)
-        #   - task due_time (24-hour int, earliest first)
-        #   - owner availability (self._owner.availability)
-        #   - owner preferences (self._owner.preferences)
-        # Allocates the owner's total available time across all pets before returning
-        # the combined recommended task list.
-        
-        # Collect all tasks from all pets that are not yet complete
-        all_tasks = []
-        for pet in pets:
-            for task in pet.tasks:
-                if not task.is_complete:
-                    all_tasks.append(task)
-        
-        # Sort by priority first (high to low), then by due_time (earliest first)
-        sorted_tasks = sorted(all_tasks, key=lambda task: (task.priority, task.due_time))
-        
-        # Calculate total available time (in minutes)
-        availability = self._owner.availability
-        # Assume each available hour slot is 60 minutes
-        total_available_minutes = len(availability) * 60
-        
-        # Filter tasks that fit within owner's availability and preferences
-        recommended_tasks = []
-        time_allocated = 0
-        
-        for task in sorted_tasks:
-            # Check if task fits within available time
-            task_duration = task.duration
-            if time_allocated + task_duration <= total_available_minutes:
-                # Check if task's due_time falls within owner's available hours
-                task_due_time = task.due_time
-                if task_due_time in availability:
-                    recommended_tasks.append(task)
-                    time_allocated += task_duration
-        
-        return recommended_tasks
+        """Schedule tasks into the owner's availability and return (scheduled, unscheduled).
+
+        Sort order: priority (1=high first), then due_time (earliest first), then
+        preference (preferred category first).
+
+        Each task is assigned to the first contiguous block of 1s in the availability
+        array that fits its full duration and ends at or before its due_time.
+        Assigned minutes are switched from 1 → 2 and the task records its reserved_indices.
+
+        Tasks that cannot be fit are returned in the unscheduled list.
+        """
+        all_tasks = [task for pet in pets for task in pet.tasks if not task.is_complete]
+
+        preferred_types = self._owner.preferences.get("task_types", [])
+        all_tasks.sort(key=lambda t: (
+            t.priority,
+            t.due_time,
+            0 if t.category in preferred_types else 1,
+        ))
+
+        availability = self._owner.availability  # mutated in-place
+        scheduled = []
+        unscheduled = []
+
+        for task in all_tasks:
+            slot = self._find_slot(availability, task.duration, task.due_time)
+            if slot is not None:
+                task.scheduled_time = slot
+                task.reserved_indices = list(range(slot, slot + task.duration))
+                for idx in task.reserved_indices:
+                    availability[idx] = 2
+                scheduled.append(task)
+            else:
+                unscheduled.append(task)
+
+        scheduled.sort(key=lambda t: t.scheduled_time)
+        return scheduled, unscheduled
+
+    def _find_slot(self, availability, duration, due_time):
+        """Find the first start index where `duration` consecutive 1s fit, ending at or before due_time.
+
+        Scans left-to-right tracking runs of 1s. Returns the run_start as soon as
+        the run is long enough and run_start + duration <= due_time. If the first
+        long-enough run already starts too late (run_start + duration > due_time),
+        returns None immediately since all later runs will be even later.
+        """
+        run_start = None
+        for i in range(len(availability)):
+            if availability[i] == 1:
+                if run_start is None:
+                    run_start = i
+                run_len = i - run_start + 1
+                if run_len >= duration:
+                    if run_start + duration <= due_time:
+                        return run_start
+                    else:
+                        # This run starts too late; all future runs will too
+                        return None
+            else:
+                run_start = None
+        return None

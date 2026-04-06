@@ -1,5 +1,5 @@
 import pytest
-from pawpal_system import Pet, Task
+from pawpal_system import Owner, Pet, Task, Scheduler
 
 def test_task_completion_changes_status():
     """Verify that calling mark_complete() changes the task's status."""
