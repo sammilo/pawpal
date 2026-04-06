@@ -121,3 +121,11 @@ classDiagram
     Scheduler ..> Pet : accesses
     Scheduler ..> Task : generates
 ```
+## Testing PawPal+
+
+Run the command python -m pytest to run all 8 tests outlined in tests/text_pawpal.py
+
+Test #1: Selecting complete checkbox marks tasks as completed 
+Test #2: Adding a task to a pet increases that pet's task count
+Test #3 (3 tests): Completed tasks are excluded from daily schedule
+Test #4 (3 tests): Task are sorted in the given order: priority → due_time → owner preference
