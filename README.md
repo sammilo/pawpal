@@ -133,3 +133,5 @@ Run the command python -m pytest to run all 8 tests outlined in tests/text_pawpa
 ## Demo
 
 Creating using Screen2Gif for Windows 
+![PawPal](https://github.com/user-attachments/assets/89360188-4f39-4add-97a5-b82e8e9dc3f5)
+
